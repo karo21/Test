@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+    <script  language="javascript"> 
+
+        function groupedDealModel() {
+            this.groupedScore = 0;
+            this.dealModelList = [];
+        }
+
+        //create angular modul
+        var app = angular.module("myApp", []);
+        //add controller to angula app
+        //inject $scope, $http
+        app.controller("mainController", ["$scope", "$http", function ($scope, $http) {
+
+            $scope.groupDealList = [];
+            //Get data 
+            $http.get("http://www.cheapshark.com/api/1.0/deals")
+                .then(function success(response) {
+                    var deals = response.data;
+
+                    var groupDealList = [];
+
+                    angular.forEach(deals, function (value, key) {
+                        //round to the next greatest tens
+                        var roundedScore = Math.ceil(value.metacriticScore / 10) * 10;
+                        var groupDeal;
+
+                        angular.forEach(groupDealList, function (groupDealValue) {
+                            if (groupDealValue.groupedScore === roundedScore) {
+                                groupDeal = groupDealValue;
+                            }
+                        });
+
+                        if (!angular.isDefined(groupDeal)) {
+                            groupDeal = new groupedDealModel();
+                            groupDeal.groupedScore = roundedScore;
+
+                            //add deal into the group
+                            groupDealList.push(groupDeal);
+                        }
+
+                        groupDeal.dealModelList.push(value);
+                    });
+
+                    //create/add group into the grouplist
+                    $scope.groupDealList = groupDealList;
+
+                }, function error() {
+                    alert("Error occured while making request");
+                });
+        }
+        ]);
+    </script>
+</head>
+<body>
+    
+    <div class="container body-content">
+        <div ng-app="myApp" class="container">
+            <div ng-controller="mainController">
+                <div>
+                    <div ng-repeat="deal in groupDealList  | orderBy:'-groupedScore'">
+                        <div>
+                            <br />
+                            <h3>{{deal.groupedScore}}</h3>
+                            <hr style="border-bottom: 1px dashed;" />
+                            <div ng-repeat="dealModel in deal.dealModelList | orderBy:'title'  ">
+                                <div clas="row">
+                                    <div class="col-xs-10">{{dealModel.title}}</div>
+                                    <div class="col-xs-1">|</div>
+                                    <div>{{dealModel.metacriticScore}}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <footer>
+           
+        </footer>
+    </div>
+
+
+   
+</body>
+</html>
